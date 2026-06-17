@@ -9,7 +9,7 @@ class AllocationRepository {
     }
 
     /**
-     * שמירת מספר הקצאה עבור חשבונית [cite: 42, 48]
+     * שמירת מספר הקצאה עבור חשבונית 
      */
     public function saveAllocation(int $invoiceId, string $confirmationNumber, array $extraData = []): void {
         $data = $this->loadAll();

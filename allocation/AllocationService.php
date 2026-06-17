@@ -30,13 +30,13 @@ class AllocationService {
      * משימה 2 - פונקציה 1: בדיקה האם נדרשת הקצאה לחשבונית 
      */
     public function needsAllocation(array $invoice, array $customer): bool {
-        // אם המערכת כבויה בקונפיגורציה [cite: 61, 62]
-        if (!$this->config->get('allocation.enabled')) { [cite: 61, 62]
+        // אם המערכת כבויה בקונפיגורציה 
+        if (!$this->config->get('allocation.enabled')) { 
             return false;
         }
 
         // אם מוגדר שכל החשבוניות צריכות לעבור הקצאה [cite: 62]
-        if ($this->config->get('allocation.request_for_all_invoices')) { [cite: 62]
+        if ($this->config->get('allocation.request_for_all_invoices')) { 
             return true;
         }
 
@@ -47,9 +47,9 @@ class AllocationService {
         }
 
         // חילוץ תאריך וסכום לפני מע"מ מהחשבונית
-        $invoiceDateStr = isset($invoice['TIME']) ? date('Y-m-d', $invoice['TIME']) : date('Y-m-d'); [cite: 33]
-        $totalIncludingVat = (float)($invoice['TOTAL'] ?? 0.00); [cite: 33]
-        $vatAmount = (float)($invoice['VAT'] ?? 0.00); [cite: 33, 34]
+        $invoiceDateStr = isset($invoice['TIME']) ? date('Y-m-d', $invoice['TIME']) : date('Y-m-d'); 
+        $totalIncludingVat = (float)($invoice['TOTAL'] ?? 0.00); 
+        $vatAmount = (float)($invoice['VAT'] ?? 0.00); 
         $amountBeforeVat = $totalIncludingVat - $vatAmount;
 
         // בדיקה 2: קביעת סף הסכום הרלוונטי על פי תאריך המסמך 
@@ -86,17 +86,17 @@ class AllocationService {
 
         // בניית מבנה ה-JSON הנדרש על פי התיעוד [cite: 22, 23]
         $payload = [
-            'invoice_id'                    => (string)$invoice['ID'], [cite: 23, 33]
+            'invoice_id'                    => (string)$invoice['ID'], 
             'invoice_type'                  => 3, // 3 = חשבונית מס [cite: 23]
-            'vat_number'                    => $this->config->get('company.vat_number'), [cite: 23, 61]
-            'invoice_reference_number'      => (string)$invoice['SERIAL'], [cite: 23, 33]
-            'customer_vat_number'           => (string)$customer['TID'], [cite: 23, 34]
-            'invoice_date'                  => $invoiceDateStr, [cite: 23]
-            'invoice_issuance_date'         => date('Y-m-d'), [cite: 23]
-            'accounting_software_number'    => $this->config->get('company.accounting_software_number'), [cite: 23, 61]
-            'payment_amount'                => number_format($amountBeforeVat, 2, '.', ''), [cite: 23]
-            'vat_amount'                    => number_format($vat, 2, '.', ''), [cite: 23]
-            'payment_amount_including_vat'  => number_format($total, 2, '.', ''), [cite: 23]
+            'vat_number'                    => $this->config->get('company.vat_number'), 
+            'invoice_reference_number'      => (string)$invoice['SERIAL'], 
+            'customer_vat_number'           => (string)$customer['TID'], 
+            'invoice_date'                  => $invoiceDateStr,
+            'invoice_issuance_date'         => date('Y-m-d'), 
+            'accounting_software_number'    => $this->config->get('company.accounting_software_number'), 
+            'payment_amount'                => number_format($amountBeforeVat, 2, '.', ''),
+            'vat_amount'                    => number_format($vat, 2, '.', ''), 
+            'payment_amount_including_vat'  => number_format($total, 2, '.', ''), 
         ];
 
         try {
@@ -105,21 +105,21 @@ class AllocationService {
             $body = $apiResult['body'];
 
             // טיפול בתשובה מוצלחת (סטטוס 200 ואישור חיובי) [cite: 25, 26]
-            if ($status === 200 && isset($body['approved']) && $body['approved'] === true) { [cite: 26]
-                $confirmationNumber = $body['confirmation_number']; [cite: 26]
+            if ($status === 200 && isset($body['approved']) && $body['approved'] === true) { 
+                $confirmationNumber = $body['confirmation_number']; 
                 
                 // שמירה בבסיס הנתונים [cite: 42]
-                $this->repository->saveAllocation($invoice['ID'], $confirmationNumber, $body); [cite: 33]
+                $this->repository->saveAllocation($invoice['ID'], $confirmationNumber, $body); 
                 return new AllocationResult(true, $confirmationNumber, null, 200);
             }
 
             // טיפול בשגיאות לוגיות של רשות המסים (קודים 460, 461, 462 וכו') [cite: 28, 45]
-            $errorMsg = $body['message'] ?? 'Invoice was rejected or delayed by tax authority.'; [cite: 26]
-            return new AllocationResult(false, "0", $errorMsg, $status); [cite: 28]
+            $errorMsg = $body['message'] ?? 'Invoice was rejected or delayed by tax authority.'; 
+            return new AllocationResult(false, "0", $errorMsg, $status);
 
         } catch (Exception $e) {
-            $this->client->log("Critical error during allocation request: " . $e->getMessage(), 'CRITICAL'); [cite: 54]
-            return new AllocationResult(false, "0", $e->getMessage(), 500); [cite: 28]
+            $this->client->log("Critical error during allocation request: " . $e->getMessage(), 'CRITICAL'); 
+            return new AllocationResult(false, "0", $e->getMessage(), 500); 
         }
     }
 
@@ -130,8 +130,8 @@ class AllocationService {
         if (empty($confirmationNumber) || $confirmationNumber === "0") {
             return "";
         }
-        $digitsToDisplay = $this->config->get('allocation.display_digits', 9); [cite: 62]
-        return substr($confirmationNumber, -$digitsToDisplay); [cite: 17]
+        $digitsToDisplay = $this->config->get('allocation.display_digits', 9);
+        return substr($confirmationNumber, -$digitsToDisplay); 
     }
 
     /**
@@ -140,9 +140,9 @@ class AllocationService {
     public function buildPriorityLine(array $invoice, ?string $allocationNumber): string {
         // פירוק שורת ה-Priority הקיימת על פי תו הטאב (\t) [cite: 11]
         // כאן אנו מדגימים שימוש בנתוני הדוגמה שסופקו במבחן [cite: 67]
-        $clientName = $invoice['NAME'] ?? 'שם לקוח'; [cite: 34, 67]
-        $serial = $invoice['SERIAL'] ?? '123456'; [cite: 33, 67]
-        $dateStr = isset($invoice['TIME']) ? date('d/m/y', $invoice['TIME']) : '01/06/26'; [cite: 33, 67]
+        $clientName = $invoice['NAME'] ?? 'שם לקוח'; 
+        $serial = $invoice['SERIAL'] ?? '123456'; 
+        $dateStr = isset($invoice['TIME']) ? date('d/m/y', $invoice['TIME']) : '01/06/26'; 
 
         $fields = [
             "1",          // אינדקס 0
@@ -161,7 +161,7 @@ class AllocationService {
         ];
 
         // הזרקת מספר ההקצאה המעובד (9 ספרות) ישירות לתוך אינדקס אסמכתא 2 [cite: 68, 69]
-        $targetIndex = $this->config->get('priority.asmachta2_field_index', 8); [cite: 62]
+        $targetIndex = $this->config->get('priority.asmachta2_field_index', 8); 
         if (!empty($allocationNumber)) {
             $fields[$targetIndex] = $this->formatForDisplay($allocationNumber);
         }
